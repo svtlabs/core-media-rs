@@ -1,6 +1,6 @@
 [package]
 name = "core-media-rs"
-description = "Rust wrapper for apple's ScreenCaptureKit"
+description = "Rust wrapper for apple's CoreMedia framework"
 categories = [
   "external-ffi-bindings",
   "multimedia",
@@ -19,4 +19,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+core-audio-types-rs = { path = "../core-audio-types-rs" }
+core-video-rs = { path = "../core-video-rs" }
 core-foundation = "0.9"
