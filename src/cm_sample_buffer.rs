@@ -1,7 +1,7 @@
 mod internal {
 
     #![allow(non_snake_case)]
-
+    #![allow(dead_code)]
     use std::{ffi::c_void, ptr};
 
     use core_audio_types_rs::audio_stream_packet_description::AudioStreamPacketDescription;
@@ -11,10 +11,10 @@ mod internal {
         mach_port::CFAllocatorRef,
     };
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
-    
+
     use crate::{
         cm_block_buffer::CMBlockBufferRef, cm_format_description::CMFormatDescriptionRef,
-        cm_sample_timing_info::CMSampleTimingInfo,  cm_time::CMTime, types::CMItemCount,
+        cm_sample_timing_info::CMSampleTimingInfo, cm_time::CMTime, types::CMItemCount,
     };
 
     #[repr(C)]
@@ -25,7 +25,6 @@ mod internal {
     declare_TCFType! {CMSampleBuffer, CMSampleBufferRef}
     impl_TCFType!(CMSampleBuffer, CMSampleBufferRef, CMSampleBufferGetTypeID);
 
-    
     // In Apple's frameworks, a refcon parameter is often used as a way to pass user-defined data into a callback function. This is a common pattern in C and Objective-C APIs, especially those that deal with low-level system or hardware interactions.
     //
     // The term refcon stands for "reference constant". It's typically a void * pointer, which means it can point to any type of data. You're responsible for casting it to the correct type within your callback function.
@@ -37,13 +36,15 @@ mod internal {
     //
     // Remember that you need to ensure the data you're pointing to stays valid until the callback is called. If the data is a local variable in a function, and that function returns before the callback is called, then the refcon will be pointing to invalid memory. In such cases, you might need to dynamically allocate memory for the data (using malloc, for example) and then free it in the callback.
     type RefCon = *mut c_void;
-    
-    type CMSampleBufferMakeDataReadyCallback = extern "C" fn (sbuf: CMSampleBufferRef, makeDataReadyRefcon: RefCon) -> OSStatus
-    type CMSampleBufferMakeDataReadyHandler = extern "C" fn (sbuf: CMSampleBufferRef) -> OSStatus;
-    type CMSampleBufferInvalidateHandler = extern "C" fn (sbuf: CMSampleBuffer);
-    type CMSampleBufferInvalidateCallback = extern "C" fn (sbuf: CMSampleBuffer, refcon: RefCon);
 
+    type CMSampleBufferMakeDataReadyCallback =
+        extern "C" fn(sbuf: CMSampleBufferRef, makeDataReadyRefcon: RefCon) -> OSStatus;
+    type CMSampleBufferMakeDataReadyHandler = extern "C" fn(sbuf: CMSampleBufferRef) -> OSStatus;
 
+    type CMSampleBufferInvalidateHandler = extern "C" fn(sbuf: CMSampleBufferRef);
+    type CMSampleBufferInvalidateCallback = extern "C" fn(sbuf: CMSampleBufferRef, refcon: RefCon);
+
+    #[link(name = "CoreMedia", kind = "framework")]
     extern "C" {
         pub fn CMSampleBufferGetTypeID() -> CFTypeID;
         pub fn CMSampleBufferCreateReady(
@@ -55,7 +56,7 @@ mod internal {
             sampleTimingArray: *const CMSampleTimingInfo,
             sampleSizeEntryCount: CMItemCount,
             sampleSizeArray: *const i64,
-            sampleBufferOut: *mut CMSampleBufferRef,
+            sampleBufferOut: &mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreate(
@@ -70,7 +71,7 @@ mod internal {
             sampleTimingArray: *const CMSampleTimingInfo,
             sampleSizeEntryCount: CMItemCount,
             sampleSizeArray: *const i64,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateReadyWithImageBuffer(
@@ -78,7 +79,7 @@ mod internal {
             imageBuffer: CVImageBufferRef,
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMAudioSampleBufferCreateReadyWithPacketDescriptions(
@@ -88,21 +89,21 @@ mod internal {
             sampleCount: CMItemCount,
             presentationTimeStamp: CMTime,
             packetDescriptions: *const AudioStreamPacketDescription,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateWithMakeDataReadyHandler(
-        allocator: CFAllocatorRef,
-        dataBuffer: CMBlockBufferRef,
-        dataReady: Boolean,
-        numSamples: CMItemCount,
-        numSampleTimingEntries: CMItemCount,
-        sampleTimingArray: *const CMSampleTimingInfo,
-        numSampleSizeEntries: CMItemCount,
-        sampleSizeArray: *const i64,
-        sampleBufferOut: *mut CMSampleBufferRef,
-        makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler
-    ) -> OSStatus;
+            allocator: CFAllocatorRef,
+            dataBuffer: CMBlockBufferRef,
+            dataReady: Boolean,
+            numSamples: CMItemCount,
+            numSampleTimingEntries: CMItemCount,
+            sampleTimingArray: *const CMSampleTimingInfo,
+            numSampleSizeEntries: CMItemCount,
+            sampleSizeArray: *const i64,
+            sampleBufferOut: *mut CMSampleBufferRef,
+            makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler,
+        ) -> OSStatus;
 
         pub fn CMSampleBufferCreateForImageBufferWithMakeDataReadyHandler(
             allocator: CFAllocatorRef,
@@ -110,8 +111,8 @@ mod internal {
             dataReady: Boolean,
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
-            sampleBufferOut:*mut  CMSampleBufferRef,
-            makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler
+            sampleBufferOut: *mut CMSampleBufferRef,
+            makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler,
         ) -> OSStatus;
 
         pub fn CMAudioSampleBufferCreateWithPacketDescriptionsAndMakeDataReadyHandler(
@@ -122,8 +123,8 @@ mod internal {
             numSamples: u64,
             presentationTimeStamp: CMTime,
             packetDescriptions: *const c_void,
-            sampleBufferOut:*mut  CMSampleBufferRef,
-            makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler
+            sampleBufferOut: *mut CMSampleBufferRef,
+            makeDataReadyHandler: CMSampleBufferMakeDataReadyHandler,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateForImageBuffer(
@@ -134,7 +135,7 @@ mod internal {
             refcon: RefCon,
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMAudioSampleBufferCreateWithPacketDescriptions(
@@ -147,13 +148,13 @@ mod internal {
             sampleCount: CMItemCount,
             presentationTimeStamp: CMTime,
             packetDescriptions: *const AudioStreamPacketDescription,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateCopy(
             allocator: CFAllocatorRef,
             sampleBuffer: CMSampleBufferRef,
-            sampleBufferOut:*mut  CMSampleBufferRef,
+            sampleBufferOut: *mut CMSampleBufferRef,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateCopyWithNewTiming(
@@ -199,24 +200,25 @@ mod internal {
 
         pub fn CMSampleBufferInvalidate(sampleBuffer: CMSampleBufferRef) -> OSStatus;
         pub fn CMSampleBufferIsValid(sampleBuffer: CMSampleBufferRef) -> Boolean;
-        pub fn CMSampleBufferSetInvalidateCallback(sampleBuffer: CMSampleBufferRef, callback: CMSampleBufferInvalidateCallback, refcon: RefCon) -> OSStatus;
+        pub fn CMSampleBufferSetInvalidateCallback(
+            sampleBuffer: CMSampleBufferRef,
+            callback: CMSampleBufferInvalidateCallback,
+            refcon: RefCon,
+        ) -> OSStatus;
     }
     pub fn empty() -> Option<CMSampleBuffer> {
-        let sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
+        let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
         unsafe {
-            let result = CMSampleBufferCreate(
+            let result = CMSampleBufferCreateReady(
                 kCFAllocatorDefault,
-                ptr::null(),
-                1,
-                ptr::null(),
-                ptr::null(),
-                ptr::null(),
+                ptr::null_mut(),
+                ptr::null_mut(),
                 0,
                 0,
+                ptr::null_mut(),
+                0,
                 ptr::null(),
-                0,
-                0,
-                &sampleBufferOut,
+                &mut sampleBufferOut,
             );
             if result == 0 {
                 Some(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))

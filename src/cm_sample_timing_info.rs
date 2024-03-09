@@ -2,6 +2,7 @@
 use crate::cm_time::CMTime;
 
 #[repr(C)]
+#[derive(Default)]
 pub struct CMSampleTimingInfo {
     pub duration: CMTime,
     pub presentationTimeStamp: CMTime,
@@ -14,16 +15,6 @@ impl CMSampleTimingInfo {
             duration,
             presentationTimeStamp,
             decodeTimeStamp,
-        }
-    }
-}
-
-impl Default for CMSampleTimingInfo {
-    fn default() -> Self {
-        CMSampleTimingInfo {
-            duration: CMTime::default(),
-            presentationTimeStamp: CMTime::default(),
-            decodeTimeStamp: CMTime::default(),
         }
     }
 }
