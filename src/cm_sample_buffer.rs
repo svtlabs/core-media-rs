@@ -13,8 +13,12 @@ mod internal {
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
-        cm_block_buffer::CMBlockBufferRef, cm_format_description::CMFormatDescriptionRef,
-        cm_sample_timing_info::CMSampleTimingInfo, cm_time::CMTime, types::CMItemCount,
+        cm_block_buffer::CMBlockBufferRef,
+        cm_format_description::CMFormatDescriptionRef,
+        cm_sample_buffer_error::{CMSampleBufferError, NO_ERROR},
+        cm_sample_timing_info::CMSampleTimingInfo,
+        cm_time::CMTime,
+        types::CMItemCount,
     };
 
     #[repr(C)]
@@ -46,6 +50,7 @@ mod internal {
 
     #[link(name = "CoreMedia", kind = "framework")]
     extern "C" {
+
         pub fn CMSampleBufferGetTypeID() -> CFTypeID;
         pub fn CMSampleBufferCreateReady(
             allocator: CFAllocatorRef,
@@ -206,7 +211,8 @@ mod internal {
             refcon: RefCon,
         ) -> OSStatus;
     }
-    pub fn empty() -> Option<CMSampleBuffer> {
+
+    pub(crate) fn empty() -> Result<CMSampleBuffer, CMSampleBufferError> {
         let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
         unsafe {
             let result = CMSampleBufferCreateReady(
@@ -220,10 +226,10 @@ mod internal {
                 ptr::null(),
                 &mut sampleBufferOut,
             );
-            if result == 0 {
-                Some(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
+            if result == NO_ERROR {
+                Ok(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
             } else {
-                None
+                Err(CMSampleBufferError::from(result))
             }
         }
     }

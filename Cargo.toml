@@ -22,3 +22,4 @@ edition = "2021"
 core-audio-types-rs = { path = "../core-audio-types-rs" }
 core-video-rs = { path = "../core-video-rs" }
 core-foundation = "0.9"
+thiserror = "1.0"
