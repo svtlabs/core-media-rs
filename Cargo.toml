@@ -19,7 +19,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-core-audio-types-rs = { path = "../core-audio-types-rs" }
-core-video-rs = { path = "../core-video-rs" }
+core-audio-types-rs = { git = "git@github.com:svtlabs/core-audio-types-rs.git", branch = "main" }
+core-video-rs = { git = "https://github.com/svtlabs/core-video-rs.git", branch = "main" }
 core-foundation = "0.9"
 thiserror = "1.0"
