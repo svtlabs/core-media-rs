@@ -2,7 +2,7 @@
 use crate::cm_time::CMTime;
 
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct CMSampleTimingInfo {
     pub duration: CMTime,
     pub presentationTimeStamp: CMTime,

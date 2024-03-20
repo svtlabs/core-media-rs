@@ -13,8 +13,8 @@ mod internal {
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
-        cm_block_buffer::CMBlockBufferRef,
-        cm_format_description::CMFormatDescriptionRef,
+        cm_block_buffer::{CMBlockBuffer, CMBlockBufferRef},
+        cm_format_description::{CMFormatDescription, CMFormatDescriptionRef},
         cm_sample_buffer_error::{CMSampleBufferError, NO_ERROR},
         cm_sample_timing_info::CMSampleTimingInfo,
         cm_time::CMTime,
@@ -125,7 +125,7 @@ mod internal {
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
             formatDescription: CMFormatDescriptionRef,
-            numSamples: u64,
+            numSamples: CMItemCount,
             presentationTimeStamp: CMTime,
             packetDescriptions: *const c_void,
             sampleBufferOut: *mut CMSampleBufferRef,
@@ -210,6 +210,33 @@ mod internal {
             callback: CMSampleBufferInvalidateCallback,
             refcon: RefCon,
         ) -> OSStatus;
+    }
+    pub(crate) fn create_ready(
+        cm_block_buffer: &CMBlockBuffer,
+        format_description: &CMFormatDescription,
+        sampleCount: CMItemCount,
+        sampleTimings: &[CMSampleTimingInfo],
+        sampleSizes: &[i64],
+    ) -> Result<CMSampleBuffer, CMSampleBufferError> {
+        let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
+        unsafe {
+            let result = CMSampleBufferCreateReady(
+                kCFAllocatorDefault,
+                cm_block_buffer.as_CFTypeRef(),
+                format_description.as_CFTypeRef(),
+                sampleCount,
+                sampleTimings.len() as CMItemCount,
+                sampleTimings.as_ptr(),
+                sampleSizes.len() as CMItemCount,
+                sampleSizes.as_ptr(),
+                &mut sampleBufferOut,
+            );
+            if result == NO_ERROR {
+                Ok(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
+            } else {
+                Err(CMSampleBufferError::from(result))
+            }
+        }
     }
 
     pub(crate) fn empty() -> Result<CMSampleBuffer, CMSampleBufferError> {
