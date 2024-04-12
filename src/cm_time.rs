@@ -1,5 +1,5 @@
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct CMTime {
     value: i64,
     timescale: i32,
