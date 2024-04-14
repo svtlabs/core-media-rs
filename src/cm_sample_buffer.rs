@@ -1,6 +1,5 @@
 mod internal {
 
-    #![allow(non_snake_case)]
     #![allow(dead_code)]
     #![allow(clippy::too_many_arguments)]
     use std::{ffi::c_void, ptr};
@@ -11,7 +10,7 @@ mod internal {
         declare_TCFType, impl_TCFType,
         mach_port::CFAllocatorRef,
     };
-    use core_utils_rs::ref_con::{trampoline, RefCon, TrampolineRefCon};
+    use core_utils_rs::ref_con::{cf_trampoline, RefCon, TrampolineRefCon};
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
@@ -217,34 +216,34 @@ mod internal {
         make_data_ready: TMakeDataReadyCallback,
         refcon: Option<TRefCon>,
         // format_description: &CMFormatDescription,
-        sampleCount: CMItemCount,
-        sampleTimings: &[CMSampleTimingInfo],
-        sampleSizes: &[i64],
+        sample_count: CMItemCount,
+        sample_timings: &[CMSampleTimingInfo],
+        sample_sizes: &[i64],
     ) -> Result<CMSampleBuffer, CMSampleBufferError>
     where
         TRefCon: Sized,
         TMakeDataReadyCallback: FnMut(CMSampleBuffer, TRefCon) -> Result<(), CMSampleBufferError>,
         TMakeDataReadyCallback: Send + 'static,
     {
-        let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
+        let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
         unsafe {
             let result = CMSampleBufferCreate(
                 kCFAllocatorDefault,
                 ptr::null_mut(), //cm_block_buffer.as_concrete_TypeRef(),
                 data_ready.into(),
-                trampoline::<CMSampleBuffer, TRefCon, CMSampleBufferError, TMakeDataReadyCallback>,
+                cf_trampoline::<CMSampleBuffer, TRefCon, CMSampleBufferError, TMakeDataReadyCallback>,
                 TrampolineRefCon::new(refcon, make_data_ready).into_leaked_mut_ptr(),
                 // format_description.as_concrete_TypeRef(),
                 ptr::null_mut(),
-                sampleCount,
-                sampleTimings.len() as CMItemCount,
-                sampleTimings.as_ptr(),
-                sampleSizes.len() as CMItemCount,
-                sampleSizes.as_ptr(),
-                &mut sampleBufferOut,
+                sample_count,
+                sample_timings.len() as CMItemCount,
+                sample_timings.as_ptr(),
+                sample_sizes.len() as CMItemCount,
+                sample_sizes.as_ptr(),
+                &mut sample_buffer_out,
             );
             if result == NO_ERROR {
-                Ok(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
+                Ok(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out))
             } else {
                 Err(CMSampleBufferError::from(result))
             }
@@ -254,25 +253,25 @@ mod internal {
     pub(crate) fn create_ready(
         cm_block_buffer: &CMBlockBuffer,
         format_description: &CMFormatDescription,
-        sampleCount: CMItemCount,
-        sampleTimings: &[CMSampleTimingInfo],
-        sampleSizes: &[i64],
+        sample_count: CMItemCount,
+        sample_timings: &[CMSampleTimingInfo],
+        sample_sizes: &[i64],
     ) -> Result<CMSampleBuffer, CMSampleBufferError> {
-        let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
+        let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
         unsafe {
             let result = CMSampleBufferCreateReady(
                 kCFAllocatorDefault,
                 cm_block_buffer.as_concrete_TypeRef(),
                 format_description.as_concrete_TypeRef(),
-                sampleCount,
-                sampleTimings.len() as CMItemCount,
-                sampleTimings.as_ptr(),
-                sampleSizes.len() as CMItemCount,
-                sampleSizes.as_ptr(),
-                &mut sampleBufferOut,
+                sample_count,
+                sample_timings.len() as CMItemCount,
+                sample_timings.as_ptr(),
+                sample_sizes.len() as CMItemCount,
+                sample_sizes.as_ptr(),
+                &mut sample_buffer_out,
             );
             if result == NO_ERROR {
-                Ok(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
+                Ok(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out))
             } else {
                 Err(CMSampleBufferError::from(result))
             }
@@ -280,7 +279,7 @@ mod internal {
     }
 
     pub(crate) fn empty() -> Result<CMSampleBuffer, CMSampleBufferError> {
-        let mut sampleBufferOut: CMSampleBufferRef = ptr::null_mut();
+        let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
         unsafe {
             let result = CMSampleBufferCreateReady(
                 kCFAllocatorDefault,
@@ -291,10 +290,10 @@ mod internal {
                 ptr::null_mut(),
                 0,
                 ptr::null(),
-                &mut sampleBufferOut,
+                &mut sample_buffer_out,
             );
             if result == NO_ERROR {
-                Ok(CMSampleBuffer::wrap_under_create_rule(sampleBufferOut))
+                Ok(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out))
             } else {
                 Err(result)?
             }
