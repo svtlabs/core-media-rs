@@ -22,6 +22,6 @@ edition = "2021"
 core-audio-types-rs = { git = "https://github.com/svtlabs/core-audio-types-rs.git", branch = "main" }
 core-video-rs = { git = "https://github.com/svtlabs/core-video-rs.git", branch = "main" }
 core-utils-rs = { path = "../core-utils-rs" }
-core-foundation = "0.9"
+core-foundation = "0.10"
 thiserror = "1.0"
 block = "0.1"
