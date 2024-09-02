@@ -50,7 +50,7 @@ mod internal {
             allocator: CFAllocatorRef,
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: TrampolineCallback,
+            makeDataReadyCallback: TrampolineCallback<OSStatus, CMSampleBufferRef>,
             refcon: TrampolineRefcon,
             formatDescription: CMFormatDescriptionRef,
             sampleCount: CMItemCount,
@@ -89,7 +89,7 @@ mod internal {
             numSampleSizeEntries: CMItemCount,
             sampleSizeArray: *const i64,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback>,
+            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateForImageBufferWithMakeDataReadyHandler(
@@ -99,7 +99,7 @@ mod internal {
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback>,
+            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
         ) -> OSStatus;
 
         pub fn CMAudioSampleBufferCreateWithPacketDescriptionsAndMakeDataReadyHandler(
@@ -111,14 +111,14 @@ mod internal {
             presentationTimeStamp: CMTime,
             packetDescriptions: *const c_void,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback>,
+            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
         ) -> OSStatus;
 
         fn CMSampleBufferCreateForImageBuffer(
             allocator: CFAllocatorRef,
             imageBuffer: CVImageBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: Option<TrampolineCallback>,
+            makeDataReadyCallback: Option<TrampolineCallback<OSStatus>>,
             refcon: Option<&TrampolineCallback>,
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
@@ -129,7 +129,7 @@ mod internal {
             allocator: CFAllocatorRef,
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: Option<TrampolineCallback>,
+            makeDataReadyCallback: Option<TrampolineCallback<OSStatus>>,
             refcon: Option<&TrampolineCallback>,
             formatDescription: CMFormatDescriptionRef,
             sampleCount: CMItemCount,
@@ -206,7 +206,7 @@ mod internal {
     pub(crate) fn create<TRefCon, TMakeDataReadyCallback>(
         // cm_block_buffer: &CMBlockBuffer,
         data_ready: bool,
-        make_data_ready: Option<TMakeDataReadyCallback>,
+        make_data_ready: TMakeDataReadyCallback,
         refcon: TRefCon,
         // format_description: &CMFormatDescription,
         sample_count: CMItemCount,
@@ -214,17 +214,13 @@ mod internal {
         sample_sizes: &[i64],
     ) -> Result<CMSampleBuffer, CMSampleBufferError>
     where
-        TRefCon: 'static,
-        TMakeDataReadyCallback: FnOnce(CMSampleBuffer, TRefCon) + 'static,
+        TRefCon: Send + 'static,
+        TMakeDataReadyCallback: Send + FnOnce(CMSampleBufferRef, TRefCon) -> OSStatus + 'static,
     {
         let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
-        let (caller, closure) = create_trampoline(move || {
-            if let Some(cb) = make_data_ready {
-                let sample_buff =
-                    unsafe { CMSampleBuffer::wrap_under_create_rule(sample_buffer_out) };
-                cb(sample_buff, refcon)
-            }
-        });
+
+        let (caller, closure) =
+            create_trampoline(move |r: CMSampleBufferRef| make_data_ready(r, refcon));
         unsafe {
             let result = CMSampleBufferCreate(
                 kCFAllocatorDefault,
@@ -322,6 +318,8 @@ impl Default for CMSampleBuffer {
 #[cfg(test)]
 mod test_cm_sample_buffer {
 
+    use core_foundation::base::TCFType;
+
     use crate::cm_sample_buffer_error::CMSampleBufferError;
 
     use super::{
@@ -335,13 +333,17 @@ mod test_cm_sample_buffer {
         let sample_sizes = vec![];
 
         let buf = create(
-            true,
-            Some(|_a, _b| {}),
+            false,
+            |a, _b| {
+                println!("Hello World! {a:p}");
+                0
+            },
             (),
             sample_count,
             &sample_timings,
             &sample_sizes,
         )?;
+        println!("{:p}", buf.as_concrete_TypeRef());
         make_data_ready(&buf)
     }
 
