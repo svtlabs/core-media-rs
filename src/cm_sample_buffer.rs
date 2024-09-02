@@ -10,7 +10,7 @@ mod internal {
         declare_TCFType, impl_TCFType,
         mach_port::CFAllocatorRef,
     };
-    use core_utils_rs::ref_con::{create_trampoline, TrampolineCallback, TrampolineRefcon};
+    use core_utils_rs::trampoline::{create_trampoline, TrampolineCallback, TrampolineRefcon};
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
