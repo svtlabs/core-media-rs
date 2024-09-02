@@ -1,6 +1,7 @@
 [package]
 name = "core-media-rs"
 description = "Rust wrapper for apple's CoreMedia framework"
+keywords = ["screencapture", "screencapturekit", "macos"]
 categories = [
   "external-ffi-bindings",
   "multimedia",
@@ -13,14 +14,14 @@ homepage = "https://github.com/svtlabs"
 rust-version = "1.72"
 license = "MIT OR Apache-2.0"
 
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-core-audio-types-rs = { git = "https://github.com/svtlabs/core-audio-types-rs.git", branch = "main" }
-core-video-rs = { git = "https://github.com/svtlabs/core-video-rs.git", branch = "main" }
+core-video-rs = { path = "../core-video-rs" }
+core-audio-types-rs = { path = "../core-audio-types-rs" }
 core-utils-rs = { path = "../core-utils-rs" }
 core-foundation = "0.10"
 thiserror = "1.0"

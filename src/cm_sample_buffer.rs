@@ -10,7 +10,7 @@ mod internal {
         declare_TCFType, impl_TCFType,
         mach_port::CFAllocatorRef,
     };
-    use core_utils_rs::ref_con::{create_trampoline, TrampolineCallback, TrampolineCallback};
+    use core_utils_rs::ref_con::{create_trampoline, TrampolineCallback, TrampolineRefcon};
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
@@ -51,7 +51,7 @@ mod internal {
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
             makeDataReadyCallback: TrampolineCallback,
-            refcon: TrampolineCallback,
+            refcon: TrampolineRefcon,
             formatDescription: CMFormatDescriptionRef,
             sampleCount: CMItemCount,
             sampleTimingEntryCount: CMItemCount,
@@ -215,11 +215,11 @@ mod internal {
     ) -> Result<CMSampleBuffer, CMSampleBufferError>
     where
         TRefCon: 'static,
-        TMakeDataReadyCallback: FnMut(CMSampleBuffer, TRefCon) + 'static,
+        TMakeDataReadyCallback: FnOnce(CMSampleBuffer, TRefCon) + 'static,
     {
         let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
         let (caller, closure) = create_trampoline(move || {
-            if let Some(mut cb) = make_data_ready {
+            if let Some(cb) = make_data_ready {
                 let sample_buff =
                     unsafe { CMSampleBuffer::wrap_under_create_rule(sample_buffer_out) };
                 cb(sample_buff, refcon)
