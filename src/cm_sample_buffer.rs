@@ -7,7 +7,9 @@ mod internal {
     use core_audio_types_rs::audio_stream_packet_description::AudioStreamPacketDescription;
     use core_foundation::{
         base::{kCFAllocatorDefault, Boolean, CFRange, CFTypeID, OSStatus, TCFType},
-        declare_TCFType, impl_TCFType,
+        declare_TCFType,
+        error::CFError,
+        impl_TCFType,
         mach_port::CFAllocatorRef,
     };
     use core_utils_rs::trampoline::{create_trampoline, TrampolineCallback, TrampolineRefcon};
@@ -215,12 +217,17 @@ mod internal {
     ) -> Result<CMSampleBuffer, CMSampleBufferError>
     where
         TRefCon: Send + 'static,
-        TMakeDataReadyCallback: Send + FnOnce(CMSampleBufferRef, TRefCon) -> OSStatus + 'static,
+        TMakeDataReadyCallback:
+            Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError> + 'static,
     {
         let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
 
-        let (caller, closure) =
-            create_trampoline(move |r: CMSampleBufferRef| make_data_ready(r, refcon));
+        let (caller, closure) = create_trampoline(move |r: CMSampleBufferRef| {
+            make_data_ready(r, refcon)
+                .map(|_| NO_ERROR)
+                .unwrap_or_else(|e| e.into())
+        });
+
         unsafe {
             let result = CMSampleBufferCreate(
                 kCFAllocatorDefault,
@@ -331,12 +338,13 @@ mod test_cm_sample_buffer {
         let sample_count = 0;
         let sample_timings = vec![];
         let sample_sizes = vec![];
+        let sample_sizes2 = vec![1, 2, 3];
 
         let buf = create(
             false,
-            |a, _b| {
-                println!("Hello World! {a:p}");
-                0
+            move |a, _b| {
+                println!("Hello World! {a:p} {sample_sizes2:?}");
+                Err(CMSampleBufferError::UnknownError(1337))
             },
             (),
             sample_count,
