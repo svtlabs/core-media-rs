@@ -21,7 +21,7 @@ const INVALIDATED: OSStatus = FLAG_OFFSET - 15;
 const DATA_FAILED: OSStatus = FLAG_OFFSET - 16;
 const DATA_CANCELED: OSStatus = FLAG_OFFSET - 17;
 
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum CMSampleBufferError<TUnknown = OSStatus> {
     #[error("The system failed to allocate memory.")]
     AllocationFailed,

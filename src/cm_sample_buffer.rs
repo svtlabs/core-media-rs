@@ -7,12 +7,12 @@ mod internal {
     use core_audio_types_rs::audio_stream_packet_description::AudioStreamPacketDescription;
     use core_foundation::{
         base::{kCFAllocatorDefault, Boolean, CFRange, CFTypeID, OSStatus, TCFType},
-        declare_TCFType,
-        error::CFError,
-        impl_TCFType,
+        declare_TCFType, impl_TCFType,
         mach_port::CFAllocatorRef,
     };
-    use core_utils_rs::trampoline::{create_trampoline, TrampolineCallback, TrampolineRefcon};
+    use core_utils_rs::trampoline::{
+        create_right_trampoline, TrampolineLeftCallback, TrampolineRefcon, TrampolineRightCallback,
+    };
     use core_video_rs::cv_image_buffer::CVImageBufferRef;
 
     use crate::{
@@ -52,7 +52,7 @@ mod internal {
             allocator: CFAllocatorRef,
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: TrampolineCallback<OSStatus, CMSampleBufferRef>,
+            makeDataReadyCallback: TrampolineRightCallback<OSStatus, CMSampleBufferRef>,
             refcon: TrampolineRefcon,
             formatDescription: CMFormatDescriptionRef,
             sampleCount: CMItemCount,
@@ -91,7 +91,7 @@ mod internal {
             numSampleSizeEntries: CMItemCount,
             sampleSizeArray: *const i64,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
+            makeDataReadyHandler: Option<TrampolineLeftCallback<OSStatus>>,
         ) -> OSStatus;
 
         pub fn CMSampleBufferCreateForImageBufferWithMakeDataReadyHandler(
@@ -101,7 +101,7 @@ mod internal {
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
+            makeDataReadyHandler: Option<TrampolineLeftCallback<OSStatus>>,
         ) -> OSStatus;
 
         pub fn CMAudioSampleBufferCreateWithPacketDescriptionsAndMakeDataReadyHandler(
@@ -113,15 +113,15 @@ mod internal {
             presentationTimeStamp: CMTime,
             packetDescriptions: *const c_void,
             sampleBufferOut: *mut CMSampleBufferRef,
-            makeDataReadyHandler: Option<TrampolineCallback<OSStatus>>,
+            makeDataReadyHandler: Option<TrampolineLeftCallback<OSStatus>>,
         ) -> OSStatus;
 
         fn CMSampleBufferCreateForImageBuffer(
             allocator: CFAllocatorRef,
             imageBuffer: CVImageBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: Option<TrampolineCallback<OSStatus>>,
-            refcon: Option<&TrampolineCallback>,
+            makeDataReadyCallback: Option<TrampolineLeftCallback<OSStatus>>,
+            refcon: Option<&TrampolineLeftCallback>,
             formatDescription: CMFormatDescriptionRef,
             sampleTiming: *const CMSampleTimingInfo,
             sampleBufferOut: *mut CMSampleBufferRef,
@@ -131,8 +131,8 @@ mod internal {
             allocator: CFAllocatorRef,
             dataBuffer: CMBlockBufferRef,
             dataReady: Boolean,
-            makeDataReadyCallback: Option<TrampolineCallback<OSStatus>>,
-            refcon: Option<&TrampolineCallback>,
+            makeDataReadyCallback: Option<TrampolineLeftCallback<OSStatus>>,
+            refcon: Option<&TrampolineLeftCallback>,
             formatDescription: CMFormatDescriptionRef,
             sampleCount: CMItemCount,
             presentationTimeStamp: CMTime,
@@ -184,15 +184,15 @@ mod internal {
 
         pub fn CMSampleBufferSetInvalidateHandler(
             sampleBuffer: CMSampleBufferRef,
-            invalidateHandler: Option<TrampolineCallback>,
+            invalidateHandler: Option<TrampolineLeftCallback>,
         ) -> OSStatus;
 
         pub fn CMSampleBufferInvalidate(sampleBuffer: CMSampleBufferRef) -> OSStatus;
         pub fn CMSampleBufferIsValid(sampleBuffer: CMSampleBufferRef) -> Boolean;
         pub fn CMSampleBufferSetInvalidateCallback(
             sampleBuffer: CMSampleBufferRef,
-            invalidateHandler: Option<TrampolineCallback>,
-            refcon: Option<&TrampolineCallback>,
+            invalidateHandler: Option<TrampolineLeftCallback>,
+            refcon: Option<&TrampolineLeftCallback>,
         ) -> OSStatus;
     }
 
@@ -222,7 +222,7 @@ mod internal {
     {
         let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
 
-        let (caller, closure) = create_trampoline(move |r: CMSampleBufferRef| {
+        let (caller, closure) = create_right_trampoline(move |r: CMSampleBufferRef| {
             make_data_ready(r, refcon)
                 .map(|_| NO_ERROR)
                 .unwrap_or_else(|e| e.into())
@@ -352,7 +352,10 @@ mod test_cm_sample_buffer {
             &sample_sizes,
         )?;
         println!("{:p}", buf.as_concrete_TypeRef());
-        make_data_ready(&buf)
+        let r = make_data_ready(&buf);
+        assert_eq!(r.err().unwrap(), CMSampleBufferError::UnknownError(1337));
+
+        Ok(())
     }
 
     #[test]
