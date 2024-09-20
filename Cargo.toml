@@ -13,7 +13,7 @@ repository = "https://github.com/svtlabs/core-media-rs"
 homepage = "https://github.com/svtlabs"
 rust-version = "1.72"
 license = "MIT OR Apache-2.0"
-
+links = "CoreMedia"
 version = "0.1.1"
 edition = "2021"
 
