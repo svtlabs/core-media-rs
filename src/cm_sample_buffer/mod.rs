@@ -14,6 +14,9 @@ impl CMSampleBuffer {
     pub fn make_data_ready(&self) -> Result<(), CMSampleBufferError> {
         self.internal_make_data_ready()
     }
+    pub fn get_format_description(&self) -> Result<CMFormatDescription, CMSampleBufferError> {
+        self.internal_get_format_description()
+    }
     #[allow(clippy::too_many_arguments)]
     pub fn create<TRefCon, TMakeDataReadyCallback>(
         allocator: CFAllocatorRef,

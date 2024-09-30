@@ -166,6 +166,22 @@ extern "C" {
     ) -> OSStatus;
 }
 impl CMSampleBuffer {
+    pub(super) fn internal_get_audio_buffer_list(&self) {}
+    pub(super) fn internal_get_format_description(
+        &self,
+    ) -> Result<CMFormatDescription, CMSampleBufferError> {
+        extern "C" {
+            pub fn CMSampleBufferGetFormatDescription(
+                sampleBuffer: CMSampleBufferRef,
+            ) -> CMFormatDescriptionRef;
+        }
+        let reference = unsafe { CMSampleBufferGetFormatDescription(self.as_concrete_TypeRef()) };
+        if reference.is_null() {
+            Err(CMSampleBufferError::CouldNotGetFormatDescription)
+        } else {
+            Ok(unsafe { CMFormatDescription::wrap_under_get_rule(reference) })
+        }
+    }
     pub(super) fn internal_make_data_ready(&self) -> Result<(), CMSampleBufferError> {
         extern "C" {
             pub fn CMSampleBufferMakeDataReady(sampleBuffer: CMSampleBufferRef) -> OSStatus;

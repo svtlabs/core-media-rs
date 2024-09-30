@@ -57,6 +57,8 @@ pub enum CMSampleBufferError<TUnknown = OSStatus> {
     SampleIndexOutOfRange,
     #[error("The sample buffer unexpectedly contains nonnumeric sample-timing information.")]
     SampleTimingInfoInvalid,
+    #[error("Could not get format description from sample buffer.")]
+    CouldNotGetFormatDescription,
     #[error("An unknown error occurred with code {0}")]
     UnknownError(TUnknown),
 }
@@ -108,6 +110,7 @@ impl From<CMSampleBufferError> for OSStatus {
             CMSampleBufferError::RequiredParameterMissing => REQUIRED_PARAMETER_MISSING,
             CMSampleBufferError::SampleIndexOutOfRange => SAMPLE_INDEX_OUT_OF_RANGE,
             CMSampleBufferError::SampleTimingInfoInvalid => SAMPLE_TIMING_INFO_INVALID,
+            CMSampleBufferError::CouldNotGetFormatDescription => -1,
             CMSampleBufferError::UnknownError(value) => value,
         }
     }
