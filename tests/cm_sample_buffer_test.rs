@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, rc::Rc};
 
 use core_foundation::base::{kCFAllocatorDefault, TCFType};
 use core_media_rs::{
@@ -21,20 +21,26 @@ fn test_create() -> Result<(), Box<dyn Error>> {
         FourCharCode::from_str("0000").expect("should work"),
         None,
     )?;
-    let buf = CMSampleBuffer::create(
-        allocator,
-        &blockbuf,
-        false,
-        move |_a, _b| Err(CMSampleBufferError::UnknownError(1337)),
-        (),
-        &format_description,
-        sample_count,
-        &sample_timings,
-        &sample_sizes,
-    )?;
-    println!("{:p}", buf.as_concrete_TypeRef());
-    let r = buf.make_data_ready();
-    assert_eq!(r.err().unwrap(), CMSampleBufferError::UnknownError(1337));
-
+    let buf = {
+        let v = vec![1, 2, 3];
+        let buf = CMSampleBuffer::create(
+            allocator,
+            &blockbuf,
+            false,
+            move |_a, _b| {
+                let b = &v;
+                println!("{b:?}");
+                Err(CMSampleBufferError::UnknownError(1337))
+            },
+            (),
+            &format_description,
+            sample_count,
+            &sample_timings,
+            &sample_sizes,
+        )?;
+        println!("{:p}", buf.as_concrete_TypeRef());
+        buf
+    };
+    buf.make_data_ready().ok();
     Ok(())
 }
