@@ -19,13 +19,13 @@ use crate::{
     cm_sample_timing_info::CMSampleTimingInfo, types::CMItemCount,
 };
 
-impl fmt::Debug for CMSampleBuffer {
+impl fmt::Debug for CMSampleBuffer<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("CMSampleBuffer").finish()
     }
 }
 
-impl CMSampleBuffer {
+impl<'a> CMSampleBuffer<'a> {
     pub fn get_num_samples(&self) -> CMItemCount {
         self.internal_get_num_samples()
     }
@@ -74,9 +74,9 @@ impl CMSampleBuffer {
         sample_sizes: &[i64],
     ) -> Result<Self, CMSampleBufferError>
     where
-        TRefCon: 'static + Send,
+        TRefCon: 'a + Send,
         TMakeDataReadyCallback:
-            'static + Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError>,
+            'a + Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError>,
     {
         Self::internal_create(
             allocator,

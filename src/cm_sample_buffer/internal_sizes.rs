@@ -9,7 +9,7 @@ use crate::{
 
 use super::{error::CMSampleBufferError, internal_base::CMSampleBufferRef};
 
-impl CMSampleBuffer {
+impl CMSampleBuffer<'_> {
     pub(super) fn internal_get_num_samples(&self) -> CMItemCount {
         extern "C" {
             pub fn CMSampleBufferGetNumSamples(sampleBuffer: CMSampleBufferRef) -> CMItemCount;

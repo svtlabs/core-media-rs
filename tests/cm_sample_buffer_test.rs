@@ -1,4 +1,4 @@
-use std::{error::Error, rc::Rc};
+use std::error::Error;
 
 use core_foundation::base::{kCFAllocatorDefault, TCFType};
 use core_media_rs::{

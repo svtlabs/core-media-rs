@@ -16,7 +16,7 @@ use crate::{
 
 use super::{error::CMSampleBufferError, internal_base::CMSampleBufferRef};
 
-impl CMSampleBuffer {
+impl<'a> CMSampleBuffer<'a> {
     pub(super) fn internal_create<TRefCon, TMakeDataReadyCallback>(
         allocator: CFAllocatorRef,
         block_buffer: &CMBlockBuffer,
@@ -29,9 +29,9 @@ impl CMSampleBuffer {
         sample_sizes: &[i64],
     ) -> Result<Self, CMSampleBufferError>
     where
-        TRefCon: 'static + Send,
+        TRefCon: Send,
         TMakeDataReadyCallback:
-            'static + Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError>,
+            Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError>,
     {
         extern "C" {
             fn CMSampleBufferCreate(
@@ -87,7 +87,7 @@ impl CMSampleBuffer {
         sample_count: CMItemCount,
         sample_timings: &[CMSampleTimingInfo],
         sample_sizes: &[i64],
-    ) -> Result<CMSampleBuffer, CMSampleBufferError> {
+    ) -> Result<Self, CMSampleBufferError> {
         extern "C" {
             pub fn CMSampleBufferCreateReady(
                 allocator: CFAllocatorRef,
