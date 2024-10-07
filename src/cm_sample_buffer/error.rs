@@ -61,6 +61,8 @@ pub enum CMSampleBufferError<TUnknown = OSStatus> {
     CouldNotGetFormatDescription,
     #[error("Could not get sample attachments from sample buffer.")]
     CouldNotGetSampleAttachments,
+    #[error("Could not get data buffer from sample buffer.")]
+    CouldNotGetDataBuffer,
     #[error("An unknown error occurred with code {0}")]
     UnknownError(TUnknown),
 }
@@ -114,6 +116,7 @@ impl From<CMSampleBufferError> for OSStatus {
             CMSampleBufferError::SampleTimingInfoInvalid => SAMPLE_TIMING_INFO_INVALID,
             CMSampleBufferError::CouldNotGetFormatDescription => -1,
             CMSampleBufferError::CouldNotGetSampleAttachments => -1,
+            CMSampleBufferError::CouldNotGetDataBuffer => -1,
             CMSampleBufferError::UnknownError(value) => value,
         }
     }

@@ -6,7 +6,7 @@ use crate::cm_sample_buffer::{
     CMSampleBufferRef,
 };
 
-impl CMSampleBuffer<'_> {
+impl CMSampleBuffer {
     pub(super) fn internal_make_data_ready(&self) -> Result<(), CMSampleBufferError> {
         extern "C" {
             pub fn CMSampleBufferMakeDataReady(sampleBuffer: CMSampleBufferRef) -> OSStatus;

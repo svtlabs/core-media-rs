@@ -1,49 +1,35 @@
 #![allow(clippy::too_many_arguments)]
 
 pub mod error;
-mod internal_base;
-mod internal_create;
-mod internal_format_description;
-mod internal_readyness;
-mod internal_sizes;
+pub(crate) mod internal_audio;
+pub(crate) mod internal_base;
+pub(crate) mod internal_create;
+pub(crate) mod internal_data;
+pub(crate) mod internal_format_description;
+pub(crate) mod internal_readyness;
+pub(crate) mod internal_sizes;
 
 use core::fmt;
 use std::fmt::Formatter;
 
+use core_audio_types_rs::audio_buffer_list::AudioBufferList;
 use core_foundation::base::CFAllocatorRef;
 use error::CMSampleBufferError;
 pub use internal_base::{CMSampleBuffer, CMSampleBufferRef};
+use internal_create::CMSampleBufferWithLifeTime;
 
 use crate::{
     cm_block_buffer::CMBlockBuffer, cm_format_description::CMFormatDescription,
     cm_sample_timing_info::CMSampleTimingInfo, types::CMItemCount,
 };
 
-impl fmt::Debug for CMSampleBuffer<'_> {
+impl fmt::Debug for CMSampleBuffer {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("CMSampleBuffer").finish()
     }
 }
 
-impl<'a> CMSampleBuffer<'a> {
-    pub fn get_num_samples(&self) -> CMItemCount {
-        self.internal_get_num_samples()
-    }
-    pub fn get_total_sample_size(&self) -> isize {
-        self.internal_get_total_sample_size()
-    }
-    pub fn get_sample_size(&self, at: CMItemCount) -> isize {
-        self.internal_get_sample_size(at)
-    }
-    pub fn get_sample_size_array(&self) -> Result<Vec<isize>, CMSampleBufferError> {
-        self.internal_get_sample_size_array()
-    }
-    pub fn make_data_ready(&self) -> Result<(), CMSampleBufferError> {
-        self.internal_make_data_ready()
-    }
-    pub fn get_format_description(&self) -> Result<CMFormatDescription, CMSampleBufferError> {
-        self.internal_get_format_description()
-    }
+impl CMSampleBuffer {
     pub fn create_ready(
         allocator: CFAllocatorRef,
         block_buffer: &CMBlockBuffer,
@@ -62,7 +48,7 @@ impl<'a> CMSampleBuffer<'a> {
         )
     }
 
-    pub fn create<TMakeDataReadyCallback>(
+    pub fn create<'a, TMakeDataReadyCallback>(
         allocator: CFAllocatorRef,
         block_buffer: &CMBlockBuffer,
         data_ready: bool,
@@ -71,7 +57,7 @@ impl<'a> CMSampleBuffer<'a> {
         sample_count: CMItemCount,
         sample_timings: &[CMSampleTimingInfo],
         sample_sizes: &[i64],
-    ) -> Result<Self, CMSampleBufferError>
+    ) -> Result<CMSampleBufferWithLifeTime<'a>, CMSampleBufferError>
     where
         TMakeDataReadyCallback:
             'a + Send + FnOnce(CMSampleBufferRef) -> Result<(), CMSampleBufferError>,
@@ -86,5 +72,29 @@ impl<'a> CMSampleBuffer<'a> {
             sample_timings,
             sample_sizes,
         )
+    }
+}
+
+impl CMSampleBuffer {
+    pub fn get_num_samples(&self) -> CMItemCount {
+        self.internal_get_num_samples()
+    }
+    pub fn get_total_sample_size(&self) -> isize {
+        self.internal_get_total_sample_size()
+    }
+    pub fn get_sample_size(&self, at: CMItemCount) -> isize {
+        self.internal_get_sample_size(at)
+    }
+    pub fn get_sample_size_array(&self) -> Result<Vec<isize>, CMSampleBufferError> {
+        self.internal_get_sample_size_array()
+    }
+    pub fn make_data_ready(&self) -> Result<(), CMSampleBufferError> {
+        self.internal_make_data_ready()
+    }
+    pub fn get_format_description(&self) -> Result<CMFormatDescription, CMSampleBufferError> {
+        self.internal_get_format_description()
+    }
+    pub fn get_audio_buffer_list(&self) -> Result<AudioBufferList, CMSampleBufferError> {
+        self.internal_get_audio_buffer_list()
     }
 }

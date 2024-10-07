@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-impl CMSampleBuffer<'_> {
+impl CMSampleBuffer {
     pub(super) fn internal_get_format_description(
         &self,
     ) -> Result<CMFormatDescription, CMSampleBufferError> {

@@ -1,5 +1,5 @@
 #![allow(clippy::too_many_arguments)]
-use std::ptr;
+use std::{marker::PhantomData, ops::{Deref, DerefMut}, ptr};
 
 use core_foundation::base::{Boolean, CFAllocatorRef, OSStatus, TCFType};
 use core_utils_rs::trampoline::{
@@ -9,15 +9,35 @@ use core_utils_rs::trampoline::{
 use crate::{
     cm_block_buffer::{CMBlockBuffer, CMBlockBufferRef},
     cm_format_description::{CMFormatDescription, CMFormatDescriptionRef},
-    cm_sample_buffer::{error::NO_ERROR, internal_base::CMSampleBuffer},
+    cm_sample_buffer::{error::NO_ERROR, CMSampleBuffer},
     cm_sample_timing_info::CMSampleTimingInfo,
     types::CMItemCount,
 };
 
-use super::{error::CMSampleBufferError, internal_base::CMSampleBufferRef};
+use super::{
+    error::CMSampleBufferError,
+    internal_base::CMSampleBufferRef,
+};
 
-impl<'a> CMSampleBuffer<'a> {
-    pub(super) fn internal_create<TMakeDataReadyCallback>(
+#[derive(Debug)]
+pub struct CMSampleBufferWithLifeTime<'a>(CMSampleBuffer, PhantomData<&'a()>);
+
+impl <'a> Deref for CMSampleBufferWithLifeTime<'a> {
+    type Target = CMSampleBuffer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl <'a> DerefMut for CMSampleBufferWithLifeTime<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+
+impl CMSampleBuffer {
+    pub(super) fn internal_create<'a, TMakeDataReadyCallback>(
         allocator: CFAllocatorRef,
         block_buffer: &CMBlockBuffer,
         data_ready: bool,
@@ -26,10 +46,10 @@ impl<'a> CMSampleBuffer<'a> {
         sample_count: CMItemCount,
         sample_timings: &[CMSampleTimingInfo],
         sample_sizes: &[i64],
-    ) -> Result<Self, CMSampleBufferError>
+    ) -> Result<CMSampleBufferWithLifeTime<'a>, CMSampleBufferError>
     where
         TMakeDataReadyCallback:
-            Send + FnOnce(CMSampleBufferRef) -> Result<(), CMSampleBufferError>,
+            'a + Send + FnOnce(CMSampleBufferRef) -> Result<(), CMSampleBufferError>,
     {
         extern "C" {
             fn CMSampleBufferCreate(
@@ -72,7 +92,7 @@ impl<'a> CMSampleBuffer<'a> {
                 &mut sample_buffer_out,
             );
             if result == NO_ERROR {
-                Ok(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out))
+                Ok(CMSampleBufferWithLifeTime(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out), PhantomData))
             } else {
                 Err(CMSampleBufferError::from(result))
             }
@@ -114,7 +134,7 @@ impl<'a> CMSampleBuffer<'a> {
                 &mut sample_buffer_out,
             );
             if result == NO_ERROR {
-                Ok(CMSampleBuffer::wrap_under_create_rule(sample_buffer_out))
+                Ok(Self::wrap_under_create_rule(sample_buffer_out))
             } else {
                 Err(CMSampleBufferError::from(result))
             }

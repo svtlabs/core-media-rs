@@ -40,6 +40,10 @@ fn test_create() -> Result<(), Box<dyn Error>> {
         println!("{:p}", buf.as_concrete_TypeRef());
         buf
     };
-    buf.make_data_ready().ok();
+    if let Err(s) = buf.make_data_ready() {
+        assert_eq!(s, CMSampleBufferError::UnknownError(1337));
+    } else {
+        unreachable!("Should not end up here!");
+    }
     Ok(())
 }
