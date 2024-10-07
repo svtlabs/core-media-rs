@@ -17,21 +17,19 @@ use crate::{
 use super::{error::CMSampleBufferError, internal_base::CMSampleBufferRef};
 
 impl<'a> CMSampleBuffer<'a> {
-    pub(super) fn internal_create<TRefCon, TMakeDataReadyCallback>(
+    pub(super) fn internal_create<TMakeDataReadyCallback>(
         allocator: CFAllocatorRef,
         block_buffer: &CMBlockBuffer,
         data_ready: bool,
         make_data_ready: TMakeDataReadyCallback,
-        refcon: TRefCon,
         format_description: &CMFormatDescription,
         sample_count: CMItemCount,
         sample_timings: &[CMSampleTimingInfo],
         sample_sizes: &[i64],
     ) -> Result<Self, CMSampleBufferError>
     where
-        TRefCon: Send,
         TMakeDataReadyCallback:
-            Send + FnOnce(CMSampleBufferRef, TRefCon) -> Result<(), CMSampleBufferError>,
+            Send + FnOnce(CMSampleBufferRef) -> Result<(), CMSampleBufferError>,
     {
         extern "C" {
             fn CMSampleBufferCreate(
@@ -53,7 +51,7 @@ impl<'a> CMSampleBuffer<'a> {
         let mut sample_buffer_out: CMSampleBufferRef = ptr::null_mut();
 
         let (caller, closure) = create_right_trampoline(move |r: CMSampleBufferRef| {
-            make_data_ready(r, refcon)
+            make_data_ready(r)
                 .map(|_| NO_ERROR)
                 .unwrap_or_else(|e| e.into())
         });

@@ -27,12 +27,11 @@ fn test_create() -> Result<(), Box<dyn Error>> {
             allocator,
             &blockbuf,
             false,
-            move |_a, _b| {
+            move |_a| {
                 let b = &v;
                 println!("{b:?}");
                 Err(CMSampleBufferError::UnknownError(1337))
             },
-            (),
             &format_description,
             sample_count,
             &sample_timings,
