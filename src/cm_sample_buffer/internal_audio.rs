@@ -13,7 +13,8 @@ use crate::{
 
 use super::{error::CMSampleBufferError, CMSampleBuffer};
 
-pub const K_CMSAMPLE_BUFFER_FLAG_AUDIO_BUFFER_LIST_ASSURE16_BYTE_ALIGNMENT: u32 = 1 << 0;
+#[allow(non_upper_case_globals)]
+pub const kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment: u32 = 1 << 0;
 
 impl CMSampleBuffer {
     pub fn internal_get_audio_buffer_list(&self) -> Result<AudioBufferList, CMSampleBufferError> {
@@ -53,7 +54,7 @@ impl CMSampleBuffer {
                 buffer_size,
                 ptr::null_mut(),
                 ptr::null_mut(),
-                K_CMSAMPLE_BUFFER_FLAG_AUDIO_BUFFER_LIST_ASSURE16_BYTE_ALIGNMENT,
+                kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
                 &mut block_buffer_ref.as_concrete_TypeRef(),
             );
 
