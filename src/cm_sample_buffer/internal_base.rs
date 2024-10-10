@@ -17,6 +17,7 @@ impl_TCFType!(
 
 
 unsafe impl Send for CMSampleBuffer {}
+unsafe impl Sync for CMSampleBuffer {}
 
 
 extern "C" {
